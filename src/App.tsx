@@ -1,0 +1,54 @@
+import { FormEvent, useState } from 'react'
+
+type User = { name: string; email: string; password: string; bio: string }
+type Order = 'course' | 'channel'
+const WALLET = 'TCTEDNkPBrrdfbbG8iF4HLvEeeYCVYSBsh'
+const TELEGRAM = 'https://t.me/fxsudan'
+
+function App() {
+  const [user, setUser] = useState<User | null>(() => JSON.parse(localStorage.getItem('fx-session') || 'null'))
+  const [authMode, setAuthMode] = useState<'login' | 'signup' | null>(null)
+  const [order, setOrder] = useState<Order | null>(null)
+  const [paid, setPaid] = useState(false)
+  const [notice, setNotice] = useState('')
+  const showNotice = (message: string) => { setNotice(message); window.setTimeout(() => setNotice(''), 3500) }
+  const openOrder = (nextOrder: Order) => { setPaid(false); setOrder(nextOrder) }
+
+  const handleAuth = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); const data = new FormData(event.currentTarget)
+    const email = String(data.get('email')).trim().toLowerCase(); const password = String(data.get('password'))
+    const accounts: User[] = JSON.parse(localStorage.getItem('fx-accounts') || '[]')
+    if (authMode === 'signup') {
+      const name = String(data.get('name')).trim()
+      if (!name || password.length < 6) return showNotice('أدخل اسمك وكلمة مرور من 6 أحرف على الأقل.')
+      if (accounts.some((account) => account.email === email)) return showNotice('هذا البريد مسجل مسبقاً.')
+      const newUser = { name, email, password, bio: '' }; localStorage.setItem('fx-accounts', JSON.stringify([...accounts, newUser])); localStorage.setItem('fx-session', JSON.stringify(newUser)); setUser(newUser); setAuthMode(null); return showNotice('تم إنشاء حسابك بنجاح، أهلاً بك في fxsudan.')
+    }
+    const found = accounts.find((account) => account.email === email && account.password === password)
+    if (!found) return showNotice('بيانات الدخول غير صحيحة.')
+    localStorage.setItem('fx-session', JSON.stringify(found)); setUser(found); setAuthMode(null); showNotice(`مرحباً بعودتك، ${found.name}.`)
+  }
+
+  const updateProfile = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault(); if (!user) return; const data = new FormData(event.currentTarget)
+    const updated = { ...user, name: String(data.get('name')).trim(), bio: String(data.get('bio')).trim() }; const accounts: User[] = JSON.parse(localStorage.getItem('fx-accounts') || '[]')
+    localStorage.setItem('fx-accounts', JSON.stringify(accounts.map((account) => account.email === user.email ? updated : account))); localStorage.setItem('fx-session', JSON.stringify(updated)); setUser(updated); showNotice('تم تحديث ملفك الشخصي.')
+  }
+  const logout = () => { localStorage.removeItem('fx-session'); setUser(null); showNotice('تم تسجيل الخروج.') }
+
+  return <main className="site-shell"><div className="flag-wash" aria-hidden="true" />
+    <header className="topbar"><a className="brand" href="#top"><span>fx</span>sudan</a><nav><a href="#offers">العروض</a><a href="#how">كيف تبدأ</a><a href="#about">عن المنهج</a></nav><div className="account-actions">{user ? <><button className="profile-mini" onClick={() => document.getElementById('profile')?.scrollIntoView({ behavior: 'smooth' })}><span className="avatar">{user.name.charAt(0)}</span>{user.name}</button><button className="ghost-button" onClick={logout}>خروج</button></> : <><button className="ghost-button" onClick={() => setAuthMode('login')}>تسجيل الدخول</button><button className="primary-button compact" onClick={() => setAuthMode('signup')}>ابدأ الآن</button></>}</div></header>
+    <section className="hero" id="top"><div className="hero-copy"><div className="eyebrow"><span className="live-dot" /> مساحة المتداولين العرب</div><h1>تداول بوعي.<br /><em>تحرك بثقة.</em></h1><p>مسار عملي لفهم السوق باستراتيجية SMC، مع مجتمع خاص يختصر عليك الطريق من أول خطوة.</p><div className="hero-cta"><button className="primary-button" onClick={() => document.getElementById('offers')?.scrollIntoView({ behavior: 'smooth' })}>شاهد العروض <span>←</span></button><div className="trust"><div className="avatar-stack"><span>م</span><span>س</span><span>ع</span></div><span>انضم لمتداولين<br /><strong>يتعلمون بذكاء</strong></span></div></div></div><div className="hero-art"><div className="chart-card"><div className="chart-head"><span>SMC / BTCUSD</span><b>+12.48%</b></div><div className="chart-grid"><svg viewBox="0 0 500 230" role="img" aria-label="مخطط تداول صاعد"><path d="M0 180 L50 155 L80 175 L125 120 L165 145 L205 85 L250 110 L300 60 L350 90 L400 34 L450 58 L500 15" fill="none" stroke="#e76f51" strokeWidth="4" /><path d="M0 180 L50 155 L80 175 L125 120 L165 145 L205 85 L250 110 L300 60 L350 90 L400 34 L450 58 L500 15 V230 H0Z" fill="url(#area)" opacity=".28" /><defs><linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#e76f51" /><stop offset="1" stopColor="#e76f51" stopOpacity="0" /></linearGradient></defs></svg><span className="chart-label label-one">BOS</span><span className="chart-label label-two">Order Block</span><span className="chart-label label-three">Liquidity</span></div><div className="chart-foot"><span><i className="green-line" /> اتجاه صاعد</span><span>4H <b>▾</b></span></div></div><div className="floating-pill pill-top">✦ تحليل أذكى</div><div className="floating-pill pill-bottom"><span className="mini-icon">◈</span><span><b>إشارات واضحة</b><small>بدون ضوضاء</small></span></div></div></section>
+    <section className="stats" id="about"><div><strong>01</strong><span>منهج واضح<br />من الأساسيات للتطبيق</span></div><div><strong>SMC</strong><span>استراتيجية<br />مبنية على حركة السعر</span></div><div><strong>24/7</strong><span>وصول للمجتمع<br />والدعم عبر تيليجرام</span></div></section>
+    <section className="offers-section" id="offers"><div className="section-heading"><div><div className="eyebrow">اختر مسارك</div><h2>ابدأ من المكان<br /><em>المناسب لك.</em></h2></div><p>لا نبيعك وعوداً سريعة. نعطيك إطاراً عملياً يساعدك تفهم قراراتك وتبني أسلوبك الخاص.</p></div><div className="offers"><OfferCard type="course" onClick={() => user ? openOrder('course') : setAuthMode('signup')} /><OfferCard type="channel" onClick={() => user ? openOrder('channel') : setAuthMode('signup')} /></div></section>
+    <section className="how-section" id="how"><div className="eyebrow">طريقة بسيطة</div><h2>ثلاث خطوات وتبدأ.</h2><div className="steps"><div><span>01</span><h3>أنشئ حسابك</h3><p>سجل باسمك وبريدك خلال دقيقة واحدة.</p></div><div><span>02</span><h3>اختر عرضك</h3><p>اختر الكورس أو عضوية القناة الخاصة.</p></div><div><span>03</span><h3>أكمل عبر تيليجرام</h3><p>بعد تأكيد الدفع، تواصل معنا مباشرة.</p></div></div></section>
+    {user && <section className="profile-section" id="profile"><div><div className="eyebrow">مساحتك الشخصية</div><h2>ملفك، <em>بطريقتك.</em></h2><p>عدّل بياناتك في أي وقت. هذه المساحة خاصة بحسابك.</p></div><form className="profile-form" onSubmit={updateProfile}><label>الاسم الظاهر<input name="name" defaultValue={user.name} required /></label><label>نبذة قصيرة<textarea name="bio" defaultValue={user.bio} placeholder="أخبرنا قليلاً عنك..." /></label><button className="primary-button" type="submit">حفظ التغييرات</button></form></section>}
+    <footer><a className="brand" href="#top"><span>fx</span>sudan</a><span>تداول بوعي، دائماً.</span><a href={TELEGRAM} target="_blank" rel="noreferrer">Telegram ↗</a></footer>
+    {authMode && <div className="modal-backdrop" onClick={() => setAuthMode(null)}><div className="modal" onClick={(event) => event.stopPropagation()}><button className="close" onClick={() => setAuthMode(null)}>×</button><div className="eyebrow">{authMode === 'signup' ? 'مرحباً بك' : 'أهلاً بعودتك'}</div><h2>{authMode === 'signup' ? 'أنشئ حسابك.' : 'سجل دخولك.'}</h2><p>{authMode === 'signup' ? 'خطوتك الأولى نحو تداول أوضح.' : 'أكمل من حيث توقفت.'}</p><form onSubmit={handleAuth}>{authMode === 'signup' && <label>الاسم الكامل<input name="name" placeholder="مثال: محمد أحمد" required /></label>}<label>البريد الإلكتروني<input type="email" name="email" placeholder="you@example.com" required /></label><label>كلمة المرور<input type="password" name="password" placeholder="6 أحرف على الأقل" minLength={6} required /></label><button className="primary-button full" type="submit">{authMode === 'signup' ? 'إنشاء الحساب' : 'دخول إلى حسابي'} <span>←</span></button></form><button className="switch-auth" onClick={() => setAuthMode(authMode === 'signup' ? 'login' : 'signup')}>{authMode === 'signup' ? 'لديك حساب؟ تسجيل الدخول' : 'ليس لديك حساب؟ أنشئ حساباً'}</button></div></div>}
+    {order && <div className="modal-backdrop" onClick={() => setOrder(null)}><div className="modal payment-modal" onClick={(event) => event.stopPropagation()}><button className="close" onClick={() => setOrder(null)}>×</button>{paid ? <><div className="success-mark">✓</div><div className="eyebrow">تم استلام تأكيدك</div><h2>الخطوة الأخيرة.</h2><p>تواصل معنا الآن عبر تيليجرام باسمك المستخدم، وسنكمل معك كل التفاصيل.</p><a className="telegram-link" href={TELEGRAM} target="_blank" rel="noreferrer">فتح تيليجرام <span>↗</span></a><div className="telegram-handle">@fxsudan</div></> : <><div className="eyebrow">إتمام الاشتراك</div><h2>حوّل، ثم أكّد.</h2><p>أرسل المبلغ عبر شبكة USDT TRC20 إلى العنوان التالي، ثم اضغط تم الدفع.</p><div className="wallet-box"><small>USDT · TRC20</small><strong>{WALLET}</strong><button onClick={() => { navigator.clipboard?.writeText(WALLET); showNotice('تم نسخ عنوان المحفظة.') }}>نسخ العنوان</button></div><div className="payment-total"><span>{order === 'course' ? 'كورس SMC' : 'القناة الخاصة'}</span><b>{order === 'course' ? '$49' : '$19'}</b></div><button className="primary-button full" onClick={() => setPaid(true)}>تم الدفع <span>←</span></button><small className="secure-note">بعد التأكيد سيظهر لك رابط التواصل مع @fxsudan</small></>}</div></div>}
+    {notice && <div className="toast">{notice}</div>}
+  </main>
+}
+
+function OfferCard({ type, onClick }: { type: Order; onClick: () => void }) { const course = type === 'course'; return <article className={`offer-card ${course ? 'featured' : ''}`}><div className="card-top"><span className="offer-icon">{course ? '◒' : '◈'}</span><span className="offer-tag">{course ? 'الأكثر طلباً' : 'للمتقدمين'}</span></div><h3>{course ? 'كورس SMC' : 'القناة الخاصة'}</h3><p>{course ? 'منهج متكامل لفهم Smart Money Concepts وتطبيقه على الشارت بثقة.' : 'تحليلات يومية، فرص مدروسة، ونقاشات مباشرة مع مجتمع المتداولين.'}</p><ul><li>✓ وصول كامل للمحتوى</li><li>✓ تطبيقات عملية على السوق</li><li>✓ دعم عبر تيليجرام</li></ul><div className="price-row"><div><small>استثمار لمرة واحدة</small><strong>{course ? '$49' : '$19'}</strong></div><button className={course ? 'primary-button' : 'outline-button'} onClick={onClick}>{course ? 'اشترك الآن' : 'انضم للقناة'} <span>←</span></button></div></article> }
+export default App
